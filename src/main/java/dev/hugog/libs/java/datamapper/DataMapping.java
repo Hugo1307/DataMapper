@@ -1,6 +1,7 @@
 package dev.hugog.libs.java.datamapper;
 
 import dev.hugog.libs.java.datamapper.dbdata.DatabaseData;
+import dev.hugog.libs.java.datamapper.discovery.DataMapperDiscoveryService;
 import dev.hugog.libs.java.datamapper.dtos.Dto;
 import dev.hugog.libs.java.datamapper.mappers.AbstractDataMapper;
 
@@ -52,6 +53,10 @@ public class DataMapping {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public void registerMappersWithDiscovery(String applicationBasePackage) {
+        mappers.addAll(new DataMapperDiscoveryService(this, applicationBasePackage).autoRegisterDataMappers());
     }
 
 }
