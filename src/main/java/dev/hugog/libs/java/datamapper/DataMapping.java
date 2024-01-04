@@ -17,6 +17,8 @@ public class DataMapping {
     @SuppressWarnings("unchecked")
     public <T extends DataObject> T map(DataObject classToMap, Class<T> classToMapTo) {
 
+        if (classToMap == null) return null;
+
         if (classToMap instanceof DatabaseData) { // Then I want to map to a DTO
 
             Optional<? extends AbstractDataMapper<?, ?>> mapper = mappers.stream()
