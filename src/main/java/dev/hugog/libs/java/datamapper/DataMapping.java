@@ -47,6 +47,24 @@ public class DataMapping {
 
     }
 
+    /**
+     * Maps a list of DataObjects to a list of DataObjects of another type
+     *
+     * @param classesToMap List of DataObjects to map
+     * @param classToMapTo Class to map to
+     * @return List of mapped DataObjects
+     * @param <T> Type of DataObject to map to
+     */
+    public <T extends DataObject> List<T> mapAll(List<? extends DataObject> classesToMap, Class<T> classToMapTo) {
+
+        if (classesToMap == null) return null;
+
+        return classesToMap.stream()
+                .map(classToMap -> map(classToMap, classToMapTo))
+                .toList();
+
+    }
+
     public void registerMapper(Class<? extends AbstractDataMapper<?, ?>> mapper) {
 
         try {

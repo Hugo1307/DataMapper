@@ -6,7 +6,7 @@
 
     <groupId>dev.hugog.libs.java</groupId>
     <artifactId>data-mapper</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -49,5 +49,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Hugo1307 Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/Hugo1307/DataMapper</url>
+        </repository>
+    </distributionManagement>
 
 </project>
