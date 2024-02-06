@@ -9,6 +9,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DataMapping {
 
@@ -62,6 +64,24 @@ public class DataMapping {
         return classesToMap.stream()
                 .map(classToMap -> map(classToMap, classToMapTo))
                 .toList();
+
+    }
+
+    /**
+     * Maps a set of DataObjects to a list of DataObjects of another type
+     *
+     * @param classesToMap Set of DataObjects to map
+     * @param classToMapTo Class to map to
+     * @return Set of mapped DataObjects
+     * @param <T> Type of DataObject to map to
+     */
+    public <T extends DataObject> Set<T> mapAll(Set<? extends DataObject> classesToMap, Class<T> classToMapTo) {
+
+        if (classesToMap == null) return null;
+
+        return classesToMap.stream()
+                .map(classToMap -> map(classToMap, classToMapTo))
+                .collect(Collectors.toSet());
 
     }
 
