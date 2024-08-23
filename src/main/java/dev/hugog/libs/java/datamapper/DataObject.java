@@ -1,3 +1,2 @@
-package dev.hugog.libs.java.datamapper;
-
-public interface DataObject { }
+package dev.hugog.libs.java.datamapper;public interface DataObject {
+}
