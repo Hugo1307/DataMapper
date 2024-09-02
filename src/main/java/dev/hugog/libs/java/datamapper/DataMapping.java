@@ -1,5 +1,6 @@
 package dev.hugog.libs.java.datamapper;
 
+import dev.hugog.libs.java.datamapper.annotations.validation.Validated;
 import dev.hugog.libs.java.datamapper.dbdata.DatabaseData;
 import dev.hugog.libs.java.datamapper.discovery.DataMapperDiscoveryService;
 import dev.hugog.libs.java.datamapper.dtos.Dto;
@@ -34,6 +35,11 @@ public class DataMapping {
             Optional<? extends AbstractDataMapper<?, ?>> mapper = mappers.stream()
                     .filter(m -> m.getDatabaseDataClass().equals(classToMapTo))
                     .findFirst();
+
+            // Validate DTO if it has the @Validated annotation
+            if (classToMap.getClass().isAnnotationPresent(Validated.class)) {
+                ((Dto) classToMap).validate();
+            }
 
             if (mapper.isPresent()) {
                 return (T) mapper.get().toData((Dto) classToMap);
