@@ -5,12 +5,8 @@ import dev.hugog.libs.java.datamapper.discovery.DataMapperDiscoveryService;
 import dev.hugog.libs.java.datamapper.dtos.Dto;
 import dev.hugog.libs.java.datamapper.mappers.AbstractMapper;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class DataMapper {
@@ -21,124 +17,120 @@ public class DataMapper {
      * Maps a DTO to DatabaseData.
      *
      * @param classToMap DTO to map
+     * @param <T>        Type of DataModel to map to
+     * @param <C>        Type of Dto to map from
      * @return mapped Model
-     * @param <T> Type of DataModel to map to
-     * @param <C> Type of Dto to map from
      */
-    @SuppressWarnings("unchecked")
-    public <T extends DatabaseData, C extends Dto> T map(C classToMap) {
+    @SuppressWarnings("unchecked") // The cast is safe because we check the types using the filter clause
+    public <T extends DatabaseData, C extends Dto> T map(C classToMap, Class<T> targetClass) {
         if (classToMap == null) {
             return null;
         }
 
         Optional<? extends AbstractMapper<T, C>> mapper = mappers.stream()
-                .filter(m -> m.getTransferObjectClass().equals(classToMap.getClass()))
+                .filter(m -> m.getTransferObjectClass().equals(classToMap.getClass()) && m.getDatabaseDataClass().equals(targetClass))
                 .map(m -> (AbstractMapper<T, C>) m)
                 .findFirst();
 
         return mapper.map(m -> m.toDataObject(classToMap))
-                .orElseThrow(() -> new IllegalArgumentException("No mapper found for class " + classToMap.getClass().getName()));
+                .orElseThrow(() -> new IllegalArgumentException("No mapper found: " + classToMap.getClass().getName() + " -> " + targetClass.getName()));
     }
 
     /**
-     * Maps DatabaseData to a DTO.
+     * Maps Database Data to a DTO.
      *
-     * @param classToMap DataModel to map
+     * @param classToMap  data model to map
+     * @param targetClass the class of the DTO to map to
+     * @param <T>         type of Dto to map to
+     * @param <C>         type of DataModel to map from
      * @return mapped DTO
-     * @param <T> Type of Dto to map to
-     * @param <C> Type of DataModel to map from
      */
-    @SuppressWarnings("unchecked")
-    public <T extends Dto, C extends DatabaseData> T map(C classToMap) {
+    @SuppressWarnings("unchecked") // The cast is safe because we check the types using the filter clause
+    public <T extends Dto, C extends DatabaseData> T map(C classToMap, Class<T> targetClass) {
         if (classToMap == null) {
             return null;
         }
 
         Optional<? extends AbstractMapper<C, T>> mapper = mappers.stream()
-                .filter(m -> m.getDatabaseDataClass().equals(classToMap.getClass()))
+                .filter(m -> m.getDatabaseDataClass().equals(classToMap.getClass()) && m.getTransferObjectClass().equals(targetClass))
                 .map(m -> (AbstractMapper<C, T>) m)
                 .findFirst();
 
         return mapper.map(m -> m.toTransferObject(classToMap))
-                .orElseThrow(() -> new IllegalArgumentException("No mapper found for class " + classToMap.getClass().getName()));
+                .orElseThrow(() -> new IllegalArgumentException("No mapper found: " + classToMap.getClass().getName() + " -> " + targetClass.getName()));
     }
 
     /**
-     * Maps a list of DTOs to DatabaseData.
+     * Maps a list of DatabaseData to DTOs or vice versa.
      *
-     * @param classesToMap List of DTOs to map
-     * @param target parameter to avoid type erasure (should be null)
-     * @return List of mapped Models
-     * @param <T> Type of DatabaseData to map to
-     * @param <C> Type of Dto to map from
+     * @param classesToMap list to map
+     * @param targetClass  the target class
+     * @param <C>          type representing a DTO class
+     * @param <D>          type representing a DatabaseData class
+     * @param <E>          type representing a DataObject class
+     * @return the mapped list
      */
-    @SuppressWarnings("unchecked")
-    public <T extends DatabaseData, C extends Dto> List<T> mapAll(List<C> classesToMap, @Nullable C target) {
-        if (classesToMap == null) return null;
-
-        return classesToMap.stream()
-                .map(classToMap -> (T) map(classToMap))
-                .toList();
+    @SuppressWarnings("unchecked") // The casts are safe because we check the types using the 'if' statements
+    public <C extends Dto, D extends DatabaseData, E extends DataObject> List<E> mapAll(List<? extends DataObject> classesToMap,
+                                                                                        Class<? extends DataObject> targetClass) {
+        if (classesToMap == null || targetClass == null) {
+            return null;
+        }
+        if (classesToMap.isEmpty()) {
+            return new ArrayList<>();
+        }
+        if (Dto.class.isAssignableFrom(targetClass)) {
+            return (List<E>) classesToMap.stream()
+                    .map(classToMap -> map((D) classToMap, (Class<C>) targetClass))
+                    .map(targetClass::cast)
+                    .collect(Collectors.toList());
+        } else if (DatabaseData.class.isAssignableFrom(targetClass)) {
+            return (List<E>) classesToMap.stream()
+                    .map(classToMap -> map((C) classToMap, (Class<D>) targetClass))
+                    .map(targetClass::cast)
+                    .collect(Collectors.toList());
+        } else {
+            throw new IllegalArgumentException("Invalid target class: " + targetClass.getName());
+        }
     }
 
     /**
-     * Maps a list of DatabaseData to DTOs.
+     * Maps a set of DatabaseData to DTOs or vice versa.
      *
-     * @param classesToMap List of DatabaseData to map
-     * @param target parameter to avoid type erasure (should be null)
-     * @return List of mapped DTOs
-     * @param <T> Type of Dto to map to
-     * @param <C> Type of DatabaseData to map from
+     * @param classesToMap set to map
+     * @param targetClass  the target class
+     * @param <C>          type representing a DTO class
+     * @param <D>          type representing a DatabaseData class
+     * @param <E>          type representing a DataObject class
+     * @return the mapped set
      */
-    @SuppressWarnings("unchecked")
-    public <T extends Dto, C extends DatabaseData> List<T> mapAll(List<C> classesToMap, @Nullable C target) {
-        if (classesToMap == null) return null;
-
-        return classesToMap.stream()
-                .map(classToMap -> (T) map(classToMap))
-                .toList();
-    }
-
-    /**
-     * Maps a set of DTOs to DatabaseData.
-     *
-     * @param classesToMap Set of DTOs to map
-     * @param target parameter to avoid type erasure (should be null)
-     * @return Set of mapped Models
-     * @param <T> Type of DatabaseData to map to
-     * @param <C> Type of Dto to map from
-     */
-    @SuppressWarnings("unchecked")
-    public <T extends DatabaseData, C extends Dto> Set<T> mapAll(Set<C> classesToMap, @Nullable C target) {
-        if (classesToMap == null) return null;
-
-        return classesToMap.stream()
-                .map(classToMap -> (T) map(classToMap))
-                .collect(Collectors.toSet());
-    }
-
-    /**
-     * Maps a set of DatabaseData to DTOs.
-     *
-     * @param classesToMap Set of DatabaseData to map
-     * @param target parameter to avoid type erasure (should be null)
-     * @return Set of mapped DTOs
-     * @param <T> Type of Dto to map to
-     * @param <C> Type of DatabaseData to map from
-     */
-    @SuppressWarnings("unchecked")
-    public <T extends Dto, C extends DatabaseData> Set<T> mapAll(Set<C> classesToMap, @Nullable C target) {
-        if (classesToMap == null) return null;
-
-        return classesToMap.stream()
-                .map(classToMap -> (T) map(classToMap))
-                .collect(Collectors.toSet());
+    @SuppressWarnings("unchecked") // The casts are safe because we check the types using the 'if' statements
+    public <C extends Dto, D extends DatabaseData, E extends DataObject> Set<E> mapAll(Set<? extends DataObject> classesToMap,
+                                                                                    Class<? extends DataObject> targetClass) {
+        if (classesToMap == null || targetClass == null) {
+            return null;
+        }
+        if (classesToMap.isEmpty()) {
+            return new HashSet<>();
+        }
+        if (Dto.class.isAssignableFrom(targetClass)) {
+            return (Set<E>) classesToMap.stream()
+                    .map(classToMap -> map((C) classToMap, (Class<D>) targetClass))
+                    .collect(Collectors.toCollection(HashSet::new));
+        } else if (DatabaseData.class.isAssignableFrom(targetClass)) {
+            return (Set<E>) classesToMap.stream()
+                    .map(classToMap -> map((D) classToMap, (Class<C>) targetClass))
+                    .collect(Collectors.toCollection(HashSet::new));
+        } else {
+            throw new IllegalArgumentException("Invalid target class: " + targetClass.getName());
+        }
     }
 
     public void registerMapper(Class<? extends AbstractMapper<?, ?>> mapper) {
         try {
             mappers.add(mapper.getDeclaredConstructor(DataMapper.class).newInstance(this));
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
