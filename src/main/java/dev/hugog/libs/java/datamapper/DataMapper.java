@@ -83,12 +83,12 @@ public class DataMapper {
             return (List<E>) classesToMap.stream()
                     .map(classToMap -> map((D) classToMap, (Class<C>) targetClass))
                     .map(targetClass::cast)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toCollection(ArrayList::new));
         } else if (DatabaseData.class.isAssignableFrom(targetClass)) {
             return (List<E>) classesToMap.stream()
                     .map(classToMap -> map((C) classToMap, (Class<D>) targetClass))
                     .map(targetClass::cast)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toCollection(ArrayList::new));
         } else {
             throw new IllegalArgumentException("Invalid target class: " + targetClass.getName());
         }
@@ -115,11 +115,11 @@ public class DataMapper {
         }
         if (Dto.class.isAssignableFrom(targetClass)) {
             return (Set<E>) classesToMap.stream()
-                    .map(classToMap -> map((C) classToMap, (Class<D>) targetClass))
+                    .map(classToMap -> map((D) classToMap, (Class<C>) targetClass))
                     .collect(Collectors.toCollection(HashSet::new));
         } else if (DatabaseData.class.isAssignableFrom(targetClass)) {
             return (Set<E>) classesToMap.stream()
-                    .map(classToMap -> map((D) classToMap, (Class<C>) targetClass))
+                    .map(classToMap -> map((C) classToMap, (Class<D>) targetClass))
                     .collect(Collectors.toCollection(HashSet::new));
         } else {
             throw new IllegalArgumentException("Invalid target class: " + targetClass.getName());
