@@ -1,17 +1,20 @@
 package dev.hugog.libs.java.datamapper;
 
 import dev.hugog.libs.java.datamapper.dbdata.DatabaseData;
-import dev.hugog.libs.java.datamapper.discovery.DataMapperDiscoveryService;
 import dev.hugog.libs.java.datamapper.dtos.Dto;
 import dev.hugog.libs.java.datamapper.mappers.AbstractMapper;
+import dev.hugog.libs.java.datamapper.registration.MapperRegistry;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class DataMapper {
 
-    private final List<AbstractMapper<?, ?>> mappers = new ArrayList<>();
+    private final MapperRegistry mapperRegistry;
+
+    public DataMapper() {
+        this.mapperRegistry = new MapperRegistry(this);
+    }
 
     /**
      * Maps a DTO to DatabaseData.
@@ -27,7 +30,7 @@ public class DataMapper {
             return null;
         }
 
-        Optional<? extends AbstractMapper<T, C>> mapper = mappers.stream()
+        Optional<? extends AbstractMapper<T, C>> mapper = mapperRegistry.getMappers().stream()
                 .filter(m -> m.getTransferObjectClass().equals(classToMap.getClass()) && m.getDatabaseDataClass().equals(targetClass))
                 .map(m -> (AbstractMapper<T, C>) m)
                 .findFirst();
@@ -51,7 +54,7 @@ public class DataMapper {
             return null;
         }
 
-        Optional<? extends AbstractMapper<C, T>> mapper = mappers.stream()
+        Optional<? extends AbstractMapper<C, T>> mapper = mapperRegistry.getMappers().stream()
                 .filter(m -> m.getDatabaseDataClass().equals(classToMap.getClass()) && m.getTransferObjectClass().equals(targetClass))
                 .map(m -> (AbstractMapper<C, T>) m)
                 .findFirst();
@@ -106,7 +109,7 @@ public class DataMapper {
      */
     @SuppressWarnings("unchecked") // The casts are safe because we check the types using the 'if' statements
     public <C extends Dto, D extends DatabaseData, E extends DataObject> Set<E> mapAll(Set<? extends DataObject> classesToMap,
-                                                                                    Class<? extends DataObject> targetClass) {
+                                                                                       Class<? extends DataObject> targetClass) {
         if (classesToMap == null || targetClass == null) {
             return null;
         }
@@ -126,17 +129,13 @@ public class DataMapper {
         }
     }
 
-    public void registerMapper(Class<? extends AbstractMapper<?, ?>> mapper) {
-        try {
-            mappers.add(mapper.getDeclaredConstructor(DataMapper.class).newInstance(this));
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                 NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void registerMappersWithDiscovery(String applicationBasePackage) {
-        mappers.addAll(new DataMapperDiscoveryService(this, applicationBasePackage).autoRegisterDataMappers());
+    /**
+     * Get the MapperRegistry.
+     *
+     * @return the MapperRegistry
+     */
+    public MapperRegistry getMapperRegistry() {
+        return mapperRegistry;
     }
 
 }

@@ -10,7 +10,7 @@ public abstract class AbstractMapper<T extends DatabaseData, C extends Dto> impl
     private final Class<C> transferObjectClass;
     private final DataMapper dataMapperInstance;
 
-    public AbstractMapper(Class<T> databaseDataClass, Class<C> transferObjectClass, DataMapper dataMapperInstance) {
+    protected AbstractMapper(Class<T> databaseDataClass, Class<C> transferObjectClass, DataMapper dataMapperInstance) {
         this.databaseDataClass = databaseDataClass;
         this.transferObjectClass = transferObjectClass;
         this.dataMapperInstance = dataMapperInstance;
